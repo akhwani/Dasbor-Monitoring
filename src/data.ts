@@ -71,18 +71,18 @@ export const fetchGoogleSheetData = async (url: string, historyGid: string = '15
           if (results.errors.length > 0) {
             console.warn('Parsing errors:', results.errors);
           }
-          const mappedData: Regulation[] = results.data.map((row: any, index: number) => {
+          const mappedData: Regulation[] = results.data.map((row: Record<string, string>, index: number) => {
             const rawProgress = (row['progress'] || row['Progress'] || '0').toString();
             const progress = parseInt(rawProgress.replace('%', '')) || 0;
             
             return {
-              id: parseInt(row['no']) || index + 1,
+              id: parseInt(row['no'] || row['No'] || row['id'] || row['ID']) || index + 1,
               kode_reg: (row['kode_reg'] || row['Kode_Reg'] || row['Kode Reg'] || row['KODE_REG'] || '').toString().trim(),
-              judul: row['Nama Regulasi'] || row['judul'] || '',
-              pengusul: row['Unit kerja'] || row['pengusul'] || '',
+              judul: row['Nama Regulasi'] || row['judul'] || row['Judul'] || row['nama_regulasi'] || '',
+              pengusul: row['Unit kerja'] || row['pengusul'] || row['Pengusul'] || row['unit_kerja'] || '',
               tahun: parseInt(row['Tahun'] || row['tahun']) || new Date().getFullYear(),
               status: (row['status'] || row['Status'] || '').toLowerCase(),
-              dokumenUrl: row['link dokumen'] || row['link_dokumen'] || '#',
+              dokumenUrl: row['link dokumen'] || row['link_dokumen'] || row['Link Dokumen'] || '#',
               tanggalPerubahan: row['data perubahan'] || row['Data Perubahan'] || row['tanggal perubahan'] || row['Tanggal Perubahan'] || '-', 
               keterangan: row['keterangan'] || row['Keterangan'] || row['KETERANGAN'] || row['ket'] || row['Ket'] || row['Catatan'] || row['catatan'] || row['Keterangan/Catatan'] || null,
               progress: progress,
@@ -104,9 +104,9 @@ export const fetchGoogleSheetData = async (url: string, historyGid: string = '15
         skipEmptyLines: true,
         complete: (results) => {
           const mappedHistory: HistoryItem[] = results.data
-            .map((row: any) => ({
+            .map((row: Record<string, string>) => ({
               kode_reg: (row['kode_reg'] || row['Kode_Reg'] || row['Kode Reg'] || row['KODE_REG'] || '').toString().trim(),
-              nama_regulasi: (row['nama_regulasi'] || row['Nama Regulasi'] || '').toString().trim(),
+              nama_regulasi: (row['nama_regulasi'] || row['Nama Regulasi'] || row['nama regulasi'] || '').toString().trim(),
               tanggal: (row['tanggal perubahan'] || row['tanggal rapat'] || row['tanggal'] || row['Tanggal'] || row['Tanggal Perubahan'] || '').toString().trim(),
               keterangan: (row['keterangan'] || row['Keterangan'] || '').toString().trim(),
               status: (row['status'] || row['Status'] || '').toString().trim(),
