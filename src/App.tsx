@@ -46,6 +46,7 @@ export default function App() {
   const [selectedRegForUpdate, setSelectedRegForUpdate] = useState<Regulation | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState('');
   const [modalProgress, setModalProgress] = useState(0);
   const [historyToDelete, setHistoryToDelete] = useState<HistoryItem | null>(null);
@@ -331,36 +332,62 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
+    <div className="flex min-h-screen bg-slate-50 font-sans overflow-hidden">
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Modern Sidebar */}
-      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-72'} bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300 relative`}>
+      <aside className={`
+        fixed inset-y-0 left-0 z-[70] lg:relative lg:flex
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} 
+        w-72 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300
+      `}>
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-10 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-slate-900 hover:scale-110 transition-all z-20"
+          className="hidden lg:flex absolute -right-3 top-10 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-slate-900 hover:scale-110 transition-all z-20"
         >
           {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        <div className={`p-8 flex flex-col items-center justify-center gap-3 ${isSidebarCollapsed ? 'px-0' : ''}`}>
-          <img 
-            src="/images/logo-bskji-ok.png" 
-            alt="Logo BSKJI" 
-            className={`${isSidebarCollapsed ? 'w-12 h-12' : 'w-56 h-28'} object-contain transition-all duration-300 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] brightness-0 invert`}
-            referrerPolicy="no-referrer"
-          />
-          {!isSidebarCollapsed && (
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-[10px] font-bold text-white uppercase tracking-[0.2em] text-center mt-1 opacity-80"
-            >
-              Kementerian Perindustrian
-            </motion.p>
-          )}
+        <div className="p-6 flex items-center justify-between lg:hidden">
+          <div className="flex items-center gap-2">
+            <span className="font-display font-black text-white text-2xl">BSKJI</span>
+          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className={`p-8 flex flex-col items-center justify-center gap-3 ${isSidebarCollapsed ? 'lg:px-0' : ''} ${isMobileMenuOpen ? 'pt-0' : ''}`}>
+          <div className={`flex flex-col items-center justify-center transition-all duration-300 ${isSidebarCollapsed ? 'lg:gap-0' : 'gap-1'}`}>
+            <span className={`font-display font-black text-white leading-none tracking-tighter ${isSidebarCollapsed ? 'lg:text-xl text-4xl' : 'text-5xl'}`}>
+              BSKJI
+            </span>
+            {(!isSidebarCollapsed || isMobileMenuOpen) && (
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em] text-center mt-2"
+              >
+                Kementerian Perindustrian
+              </motion.p>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
-          {!isSidebarCollapsed && (
+          {(!isSidebarCollapsed || isMobileMenuOpen) && (
             <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Main Menu</p>
           )}
           
@@ -368,31 +395,44 @@ export default function App() {
             icon={<LayoutDashboard size={20} />} 
             label="Dashboard" 
             active={activeMenu === 'dashboard'} 
-            onClick={() => setActiveMenu('dashboard')} 
-            collapsed={isSidebarCollapsed}
+            onClick={() => {
+              setActiveMenu('dashboard');
+              setIsMobileMenuOpen(false);
+            }} 
+            collapsed={isSidebarCollapsed && !isMobileMenuOpen}
           />
           <SidebarLink 
             icon={<Table size={20} />} 
             label="Dataset" 
             active={activeMenu === 'dataset'} 
-            onClick={() => setActiveMenu('dataset')} 
-            collapsed={isSidebarCollapsed}
+            onClick={() => {
+              setActiveMenu('dataset');
+              setIsMobileMenuOpen(false);
+            }} 
+            collapsed={isSidebarCollapsed && !isMobileMenuOpen}
           />
         </nav>
-
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Modern Header */}
-        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
+        <header className="h-20 bg-white border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-50">
           <div className="flex items-center gap-4">
-            <h2 className="font-display text-xl font-semibold text-slate-800">Program Penyusunan Prioritas</h2>
-            <div className="h-4 w-px bg-slate-200" />
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            >
+              <Menu size={24} />
+            </button>
+            <h2 className="font-display text-lg lg:text-xl font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-none">
+              Program Penyusunan Prioritas
+            </h2>
+            <div className="hidden sm:block h-4 w-px bg-slate-200" />
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
               <User size={16} />
               <select 
                 className="bg-transparent border-none focus:ring-0 cursor-pointer appearance-none pr-6"
@@ -406,7 +446,7 @@ export default function App() {
               </select>
               <ChevronDown size={14} className="absolute right-3 pointer-events-none" />
             </div>
-            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
+            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-3 lg:px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
               <Calendar size={16} />
               <select 
                 className="bg-transparent border-none focus:ring-0 cursor-pointer appearance-none pr-6"
@@ -424,23 +464,17 @@ export default function App() {
         </header>
 
         {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto relative">
-          {/* Background Image Theme */}
+        <div className="flex-1 overflow-y-auto relative scrollbar-thin">
+          {/* Background Theme */}
           <div 
-            className="absolute inset-0 z-0 opacity-15 pointer-events-none"
-            style={{ 
-              backgroundImage: "url('/images/COVER20INO.jpg')",
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundAttachment: 'fixed'
-            }}
+            className="absolute inset-0 z-0 opacity-5 pointer-events-none bg-gradient-to-br from-slate-100 to-white"
           />
           
-          <div className="relative z-10 p-8 space-y-8">
+          <div className="relative z-10 p-4 lg:p-8 space-y-6 lg:space-y-8 max-w-[1600px] mx-auto">
             {activeMenu === 'dashboard' ? (
             <>
               {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 <StatCard 
                   label="Total Regulasi" 
                   value={totalRegulasi.toString()} 
@@ -670,8 +704,8 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="flex-1 overflow-x-auto">
-                    <table className="w-full text-left">
+                  <div className="flex-1 overflow-x-auto scrollbar-thin">
+                    <table className="w-full text-left min-w-[1000px]">
                       <thead>
                         <tr className="bg-slate-50/50">
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12">No</th>
@@ -977,8 +1011,10 @@ export default function App() {
       </div>
 
       {/* Minimal Footer */}
-        <footer className="px-8 py-4 bg-white border-t border-slate-200 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <footer className="px-4 lg:px-8 py-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           <span>BSKJI Kementerian Perindustrian</span>
+          <span className="hidden sm:inline">•</span>
+          <span>© 2024 Sistem Monitoring Prioritas</span>
         </footer>
       </main>
       {/* Detail Modal */}
@@ -1382,19 +1418,19 @@ function StatCard({ label, value, trend, icon, color, getStatCardColors }: { lab
   return (
     <motion.div 
       whileHover={{ y: -4 }}
-      className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
+      className="bg-white p-5 lg:p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
     >
       <div className="flex items-start justify-between mb-4">
         <div className={`p-3 rounded-2xl ${getStatCardColors(color)}`}>
           {icon}
         </div>
-        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+        <span className={`text-[10px] lg:text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
           {trend}
         </span>
       </div>
       <div>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <h4 className="text-3xl font-display font-bold text-slate-800 tracking-tight">{value}</h4>
+        <p className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <h4 className="text-2xl lg:text-3xl font-display font-bold text-slate-800 tracking-tight">{value}</h4>
       </div>
     </motion.div>
   );
