@@ -12,6 +12,7 @@ import {
   User, 
   Calendar,
   ChevronDown,
+  ChevronUp,
   FileText,
   CheckCircle2,
   Clock,
@@ -50,6 +51,16 @@ export default function App() {
   const [historyToDelete, setHistoryToDelete] = useState<HistoryItem | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Regulation | null, direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
+
+  const handleSort = (key: keyof Regulation) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
   
   // Update modal states when selected regulation changes
   useEffect(() => {
@@ -132,6 +143,15 @@ export default function App() {
     const matchesYear = selectedYear === 'All' || reg.tahun === selectedYear;
     const matchesUnit = selectedUnit === 'All' || reg.pengusul === selectedUnit;
     return matchesSearch && matchesYear && matchesUnit;
+  }).sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    const aValue = a[sortConfig.key];
+    const bValue = b[sortConfig.key];
+    
+    if (aValue === bValue) return 0;
+    
+    const comparison = aValue < bValue ? -1 : 1;
+    return sortConfig.direction === 'asc' ? comparison : -comparison;
   });
 
   const totalRegulasi = filteredRegulations.length;
@@ -498,65 +518,156 @@ export default function App() {
                 {/* List Table */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                   <div className="p-8 border-b border-slate-100 flex flex-col gap-6 bg-white sticky top-0 z-[5]">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display font-bold text-slate-800 text-lg">Daftar Regulasi Prioritas</h3>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="relative flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-transparent focus-within:border-slate-200 transition-all">
-                          <User size={14} className="text-slate-400" />
-                          <select 
-                            className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-600 cursor-pointer appearance-none pr-6"
-                            value={selectedUnit}
-                            onChange={(e) => setSelectedUnit(e.target.value)}
-                          >
-                            <option value="All">Semua Unit</option>
-                            {units.map((unit, index) => (
-                              <option key={`unit-dashboard-${unit}-${index}`} value={unit}>{unit}</option>
-                            ))}
-                          </select>
-                          <ChevronDown size={12} className="absolute right-3 text-slate-400 pointer-events-none" />
+                        <div className="bg-indigo-50 p-2 rounded-xl">
+                          <Table className="text-indigo-600" size={20} />
                         </div>
-                        <div className="relative">
+                        <h3 className="font-display font-bold text-slate-800 text-lg">Daftar Regulasi Prioritas</h3>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Search Input */}
+                        <div className="relative flex-1 md:flex-none">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                           <input 
                             type="text" 
-                            placeholder="Cari nama regulasi..." 
-                            className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-slate-200 w-64 transition-all"
+                            placeholder="Cari regulasi..." 
+                            className="pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 w-full md:w-64 transition-all font-medium"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
                         </div>
-                        <button className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
+
+                        {/* Filter Toggle */}
+                        <button 
+                          onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                          className={`p-2.5 rounded-xl transition-all flex items-center gap-2 border ${
+                            isFilterPanelOpen 
+                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20' 
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
                           <Filter size={18} />
+                          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Filter</span>
                         </button>
+
+                        {/* Reset Button */}
+                        {(searchQuery || selectedYear !== 'All' || selectedUnit !== 'All') && (
+                          <button 
+                            onClick={() => {
+                              setSearchQuery('');
+                              setSelectedYear('All');
+                              setSelectedUnit('All');
+                            }}
+                            className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-100"
+                            title="Hapus semua filter"
+                          >
+                            <X size={18} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    {/* Year Filter Tabs */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                      <button 
-                        onClick={() => setSelectedYear('All')}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                          selectedYear === 'All' 
-                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' 
-                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                        }`}
-                      >
-                        Semua Tahun
-                      </button>
-                      {years.map((year, index) => (
-                        <button 
-                          key={`year-tab-${year}-${index}`}
-                          onClick={() => setSelectedYear(year)}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                            selectedYear === year 
-                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                          }`}
+                    {/* Advanced Filter Panel */}
+                    <AnimatePresence>
+                      {isFilterPanelOpen && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
                         >
-                          {year}
-                        </button>
-                      ))}
-                    </div>
+                          <div className="pt-2 pb-4 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 mt-2">
+                            {/* Unit Kerja Filter */}
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Unit Kerja</label>
+                              <div className="flex flex-wrap gap-2">
+                                <button 
+                                  onClick={() => setSelectedUnit('All')}
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                    selectedUnit === 'All' 
+                                      ? 'bg-slate-900 text-white' 
+                                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  Semua Unit
+                                </button>
+                                {units.map((unit, index) => (
+                                  <button 
+                                    key={`unit-filter-${unit}-${index}`}
+                                    onClick={() => setSelectedUnit(unit)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                      selectedUnit === unit 
+                                        ? 'bg-indigo-500 text-white' 
+                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    {unit}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Year Picker (Calendar Style) */}
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Tahun Anggaran</label>
+                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                <button 
+                                  onClick={() => setSelectedYear('All')}
+                                  className={`px-2 py-2 rounded-lg text-xs font-bold transition-all border ${
+                                    selectedYear === 'All' 
+                                      ? 'bg-slate-900 text-white border-slate-900' 
+                                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                  }`}
+                                >
+                                  Semua
+                                </button>
+                                {years.map((year, index) => (
+                                  <button 
+                                    key={`year-picker-${year}-${index}`}
+                                    onClick={() => setSelectedYear(year)}
+                                    className={`px-2 py-2 rounded-lg text-xs font-bold transition-all border flex flex-col items-center justify-center gap-1 ${
+                                      selectedYear === year 
+                                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20' 
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    <Calendar size={12} className={selectedYear === year ? 'text-white' : 'text-slate-300'} />
+                                    {year}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Active Filters Summary */}
+                    {(selectedYear !== 'All' || selectedUnit !== 'All' || searchQuery) && (
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Aktif:</span>
+                        {searchQuery && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold border border-indigo-100">
+                            Search: "{searchQuery}"
+                            <X size={10} className="cursor-pointer" onClick={() => setSearchQuery('')} />
+                          </div>
+                        )}
+                        {selectedUnit !== 'All' && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold border border-indigo-100">
+                            Unit: {selectedUnit}
+                            <X size={10} className="cursor-pointer" onClick={() => setSelectedUnit('All')} />
+                          </div>
+                        )}
+                        {selectedYear !== 'All' && (
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold border border-emerald-100">
+                            Tahun: {selectedYear}
+                            <X size={10} className="cursor-pointer" onClick={() => setSelectedYear('All')} />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 overflow-x-auto">
@@ -564,11 +675,61 @@ export default function App() {
                       <thead>
                         <tr className="bg-slate-50/50">
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12">No</th>
-                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Regulasi</th>
-                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit Kerja</th>
-                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tahun</th>
-                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</th>
+                          <th 
+                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
+                            onClick={() => handleSort('judul')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Nama Regulasi
+                              {sortConfig.key === 'judul' && (
+                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
+                            onClick={() => handleSort('pengusul')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Unit Kerja
+                              {sortConfig.key === 'pengusul' && (
+                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
+                            onClick={() => handleSort('tahun')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Tahun
+                              {sortConfig.key === 'tahun' && (
+                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
+                            onClick={() => handleSort('status')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Status
+                              {sortConfig.key === 'status' && (
+                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
+                            onClick={() => handleSort('progress')}
+                          >
+                            <div className="flex items-center gap-1">
+                              Progress
+                              {sortConfig.key === 'progress' && (
+                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                              )}
+                            </div>
+                          </th>
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan</th>
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Edit</th>
                         </tr>
