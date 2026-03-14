@@ -12,7 +12,6 @@ import {
   User, 
   Calendar,
   ChevronDown,
-  ChevronUp,
   FileText,
   CheckCircle2,
   Clock,
@@ -42,26 +41,14 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | 'All'>('All');
   const [selectedUnit, setSelectedUnit] = useState<string | 'All'>('All');
-  const [selectedReg, setSelectedReg] = useState<Regulation | null>(null);
+  const [selectedReg, setSelectedReg] = useState<any | null>(null);
   const [selectedRegForUpdate, setSelectedRegForUpdate] = useState<Regulation | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState('');
   const [modalProgress, setModalProgress] = useState(0);
   const [historyToDelete, setHistoryToDelete] = useState<HistoryItem | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Regulation | null, direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
-
-  const handleSort = (key: keyof Regulation) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
   
   // Update modal states when selected regulation changes
   useEffect(() => {
@@ -144,15 +131,6 @@ export default function App() {
     const matchesYear = selectedYear === 'All' || reg.tahun === selectedYear;
     const matchesUnit = selectedUnit === 'All' || reg.pengusul === selectedUnit;
     return matchesSearch && matchesYear && matchesUnit;
-  }).sort((a, b) => {
-    if (!sortConfig.key) return 0;
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-    
-    if (aValue === bValue) return 0;
-    
-    const comparison = aValue < bValue ? -1 : 1;
-    return sortConfig.direction === 'asc' ? comparison : -comparison;
   });
 
   const totalRegulasi = filteredRegulations.length;
@@ -178,15 +156,6 @@ export default function App() {
     if (s.includes('harmon')) return 'bg-indigo-500';
     if (s.includes('undang') || s.includes('selesai')) return 'bg-emerald-500';
     return 'bg-slate-400';
-  };
-
-  const getStatCardColors = (color: string) => {
-    switch (color) {
-      case 'red': return 'bg-red-50';
-      case 'emerald': return 'bg-emerald-50';
-      case 'indigo': return 'bg-indigo-50';
-      default: return 'bg-slate-50';
-    }
   };
 
   const totalPages = Math.ceil(filteredRegulations.length / itemsPerPage);
@@ -332,62 +301,36 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans overflow-hidden">
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
+    <div className="flex min-h-screen bg-slate-50 font-sans">
       {/* Modern Sidebar */}
-      <aside className={`
-        fixed inset-y-0 left-0 z-[70] lg:relative lg:flex
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-72'} 
-        w-72 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300
-      `}>
+      <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-72'} bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 transition-all duration-300 relative`}>
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="hidden lg:flex absolute -right-3 top-10 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-slate-900 hover:scale-110 transition-all z-20"
+          className="absolute -right-3 top-10 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-slate-900 hover:scale-110 transition-all z-20"
         >
           {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        <div className="p-6 flex items-center justify-between lg:hidden">
-          <div className="flex items-center gap-2">
-            <span className="font-display font-black text-white text-2xl">BSKJI</span>
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-white">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className={`p-8 flex flex-col items-center justify-center gap-3 ${isSidebarCollapsed ? 'lg:px-0' : ''} ${isMobileMenuOpen ? 'pt-0' : ''}`}>
-          <div className={`flex flex-col items-center justify-center transition-all duration-300 ${isSidebarCollapsed ? 'lg:gap-0' : 'gap-1'}`}>
-            <span className={`font-display font-black text-white leading-none tracking-tighter ${isSidebarCollapsed ? 'lg:text-xl text-4xl' : 'text-5xl'}`}>
-              BSKJI
-            </span>
-            {(!isSidebarCollapsed || isMobileMenuOpen) && (
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.3em] text-center mt-2"
-              >
-                Kementerian Perindustrian
-              </motion.p>
-            )}
-          </div>
+        <div className={`p-8 flex flex-col items-center justify-center gap-3 ${isSidebarCollapsed ? 'px-0' : ''}`}>
+          <img 
+            src="/images/logo-bskji-ok.png" 
+            alt="Logo BSKJI" 
+            className={`${isSidebarCollapsed ? 'w-12 h-12' : 'w-56 h-28'} object-contain transition-all duration-300 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] brightness-0 invert`}
+            referrerPolicy="no-referrer"
+          />
+          {!isSidebarCollapsed && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[10px] font-bold text-white uppercase tracking-[0.2em] text-center mt-1 opacity-80"
+            >
+              Kementerian Perindustrian
+            </motion.p>
+          )}
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
-          {(!isSidebarCollapsed || isMobileMenuOpen) && (
+          {!isSidebarCollapsed && (
             <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Main Menu</p>
           )}
           
@@ -395,44 +338,31 @@ export default function App() {
             icon={<LayoutDashboard size={20} />} 
             label="Dashboard" 
             active={activeMenu === 'dashboard'} 
-            onClick={() => {
-              setActiveMenu('dashboard');
-              setIsMobileMenuOpen(false);
-            }} 
-            collapsed={isSidebarCollapsed && !isMobileMenuOpen}
+            onClick={() => setActiveMenu('dashboard')} 
+            collapsed={isSidebarCollapsed}
           />
           <SidebarLink 
             icon={<Table size={20} />} 
             label="Dataset" 
             active={activeMenu === 'dataset'} 
-            onClick={() => {
-              setActiveMenu('dataset');
-              setIsMobileMenuOpen(false);
-            }} 
-            collapsed={isSidebarCollapsed && !isMobileMenuOpen}
+            onClick={() => setActiveMenu('dataset')} 
+            collapsed={isSidebarCollapsed}
           />
         </nav>
+
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden w-full">
+      <main className="flex-1 flex flex-col overflow-hidden">
         {/* Modern Header */}
-        <header className="h-20 bg-white border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-50">
+        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-            >
-              <Menu size={24} />
-            </button>
-            <h2 className="font-display text-lg lg:text-xl font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-none">
-              Program Penyusunan Prioritas
-            </h2>
-            <div className="hidden sm:block h-4 w-px bg-slate-200" />
+            <h2 className="font-display text-xl font-semibold text-slate-800">Program Penyusunan Prioritas</h2>
+            <div className="h-4 w-px bg-slate-200" />
           </div>
           
-          <div className="flex items-center gap-2 lg:gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
               <User size={16} />
               <select 
                 className="bg-transparent border-none focus:ring-0 cursor-pointer appearance-none pr-6"
@@ -446,7 +376,7 @@ export default function App() {
               </select>
               <ChevronDown size={14} className="absolute right-3 pointer-events-none" />
             </div>
-            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-3 lg:px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
+            <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-slate-200 transition-colors relative">
               <Calendar size={16} />
               <select 
                 className="bg-transparent border-none focus:ring-0 cursor-pointer appearance-none pr-6"
@@ -460,28 +390,37 @@ export default function App() {
               </select>
               <ChevronDown size={14} className="absolute right-3 pointer-events-none" />
             </div>
+            <div className="h-8 w-px bg-slate-200 mx-2" />
+            <button className="bg-slate-900 text-white p-2 rounded-xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
+              <Download size={20} />
+            </button>
           </div>
         </header>
 
         {/* Scrollable Area */}
-        <div className="flex-1 overflow-y-auto relative scrollbar-thin">
-          {/* Background Theme */}
+        <div className="flex-1 overflow-y-auto relative">
+          {/* Background Image Theme */}
           <div 
-            className="absolute inset-0 z-0 opacity-5 pointer-events-none bg-gradient-to-br from-slate-100 to-white"
+            className="absolute inset-0 z-0 opacity-15 pointer-events-none"
+            style={{ 
+              backgroundImage: "url('/images/COVER20INO.jpg')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundAttachment: 'fixed'
+            }}
           />
           
-          <div className="relative z-10 p-4 lg:p-8 space-y-6 lg:space-y-8 max-w-[1600px] mx-auto">
+          <div className="relative z-10 p-8 space-y-8">
             {activeMenu === 'dashboard' ? (
             <>
               {/* Stats Overview */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard 
                   label="Total Regulasi" 
                   value={totalRegulasi.toString()} 
                   trend={selectedYear === 'All' ? "Total" : `Tahun ${selectedYear}`}
                   icon={<FileText className="text-red-500" />} 
                   color="red"
-                  getStatCardColors={getStatCardColors}
                 />
                 <StatCard 
                   label="Regulasi Selesai" 
@@ -489,7 +428,6 @@ export default function App() {
                   trend={`${(((statusCounts.selesai + statusCounts.pengundangan) / (totalRegulasi || 1)) * 100).toFixed(0)}%`}
                   icon={<CheckCircle2 className="text-emerald-500" />} 
                   color="emerald"
-                  getStatCardColors={getStatCardColors}
                 />
                 <StatCard 
                   label="Progress Rata-rata" 
@@ -497,7 +435,6 @@ export default function App() {
                   trend="Overall" 
                   icon={<TrendingUp className="text-indigo-500" />} 
                   color="indigo"
-                  getStatCardColors={getStatCardColors}
                 />
               </div>
 
@@ -552,311 +489,147 @@ export default function App() {
                 {/* List Table */}
                 <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                   <div className="p-8 border-b border-slate-100 flex flex-col gap-6 bg-white sticky top-0 z-[5]">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-display font-bold text-slate-800 text-lg">Daftar Regulasi Prioritas</h3>
                       <div className="flex items-center gap-3">
-                        <div className="bg-indigo-50 p-2 rounded-xl">
-                          <Table className="text-indigo-600" size={20} />
+                        <div className="relative flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-2 border border-transparent focus-within:border-slate-200 transition-all">
+                          <User size={14} className="text-slate-400" />
+                          <select 
+                            className="bg-transparent border-none focus:ring-0 text-xs font-bold text-slate-600 cursor-pointer appearance-none pr-6"
+                            value={selectedUnit}
+                            onChange={(e) => setSelectedUnit(e.target.value)}
+                          >
+                            <option value="All">Semua Unit</option>
+                            {units.map((unit, index) => (
+                              <option key={`unit-dashboard-${unit}-${index}`} value={unit}>{unit}</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={12} className="absolute right-3 text-slate-400 pointer-events-none" />
                         </div>
-                        <h3 className="font-display font-bold text-slate-800 text-lg">Daftar Regulasi Prioritas</h3>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center gap-3">
-                        {/* Search Input */}
-                        <div className="relative flex-1 md:flex-none">
+                        <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                           <input 
                             type="text" 
-                            placeholder="Cari regulasi..." 
-                            className="pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 w-full md:w-64 transition-all font-medium"
+                            placeholder="Cari nama regulasi..." 
+                            className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-slate-200 w-64 transition-all"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                           />
                         </div>
-
-                        {/* Filter Toggle */}
-                        <button 
-                          onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                          className={`p-2.5 rounded-xl transition-all flex items-center gap-2 border ${
-                            isFilterPanelOpen 
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-600/20' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
+                        <button className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors">
                           <Filter size={18} />
-                          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Filter</span>
                         </button>
-
-                        {/* Reset Button */}
-                        {(searchQuery || selectedYear !== 'All' || selectedUnit !== 'All') && (
-                          <button 
-                            onClick={() => {
-                              setSearchQuery('');
-                              setSelectedYear('All');
-                              setSelectedUnit('All');
-                            }}
-                            className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors border border-red-100"
-                            title="Hapus semua filter"
-                          >
-                            <X size={18} />
-                          </button>
-                        )}
                       </div>
                     </div>
 
-                    {/* Advanced Filter Panel */}
-                    <AnimatePresence>
-                      {isFilterPanelOpen && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
+                    {/* Year Filter Tabs */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                      <button 
+                        onClick={() => setSelectedYear('All')}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                          selectedYear === 'All' 
+                            ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' 
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        }`}
+                      >
+                        Semua Tahun
+                      </button>
+                      {years.map((year, index) => (
+                        <button 
+                          key={`year-tab-${year}-${index}`}
+                          onClick={() => setSelectedYear(year)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                            selectedYear === year 
+                              ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' 
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}
                         >
-                          <div className="pt-2 pb-4 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-100 mt-2">
-                            {/* Unit Kerja Filter */}
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Unit Kerja</label>
-                              <div className="flex flex-wrap gap-2">
-                                <button 
-                                  onClick={() => setSelectedUnit('All')}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    selectedUnit === 'All' 
-                                      ? 'bg-slate-900 text-white' 
-                                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                  }`}
-                                >
-                                  Semua Unit
-                                </button>
-                                {units.map((unit, index) => (
-                                  <button 
-                                    key={`unit-filter-${unit}-${index}`}
-                                    onClick={() => setSelectedUnit(unit)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                      selectedUnit === unit 
-                                        ? 'bg-indigo-500 text-white' 
-                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                    }`}
-                                  >
-                                    {unit}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Year Picker (Calendar Style) */}
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Tahun Anggaran</label>
-                              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
-                                <button 
-                                  onClick={() => setSelectedYear('All')}
-                                  className={`px-2 py-2 rounded-lg text-xs font-bold transition-all border ${
-                                    selectedYear === 'All' 
-                                      ? 'bg-slate-900 text-white border-slate-900' 
-                                      : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                  }`}
-                                >
-                                  Semua
-                                </button>
-                                {years.map((year, index) => (
-                                  <button 
-                                    key={`year-picker-${year}-${index}`}
-                                    onClick={() => setSelectedYear(year)}
-                                    className={`px-2 py-2 rounded-lg text-xs font-bold transition-all border flex flex-col items-center justify-center gap-1 ${
-                                      selectedYear === year 
-                                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20' 
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                    }`}
-                                  >
-                                    <Calendar size={12} className={selectedYear === year ? 'text-white' : 'text-slate-300'} />
-                                    {year}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Active Filters Summary */}
-                    {(selectedYear !== 'All' || selectedUnit !== 'All' || searchQuery) && (
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Filter Aktif:</span>
-                        {searchQuery && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold border border-indigo-100">
-                            Search: "{searchQuery}"
-                            <X size={10} className="cursor-pointer" onClick={() => setSearchQuery('')} />
-                          </div>
-                        )}
-                        {selectedUnit !== 'All' && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold border border-indigo-100">
-                            Unit: {selectedUnit}
-                            <X size={10} className="cursor-pointer" onClick={() => setSelectedUnit('All')} />
-                          </div>
-                        )}
-                        {selectedYear !== 'All' && (
-                          <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold border border-emerald-100">
-                            Tahun: {selectedYear}
-                            <X size={10} className="cursor-pointer" onClick={() => setSelectedYear('All')} />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          {year}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex-1 overflow-x-auto scrollbar-thin">
-                    <table className="w-full text-left min-w-[1000px]">
+                  <div className="flex-1 overflow-x-auto">
+                    <table className="w-full text-left">
                       <thead>
                         <tr className="bg-slate-50/50">
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12">No</th>
-                          <th 
-                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
-                            onClick={() => handleSort('judul')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Nama Regulasi
-                              {sortConfig.key === 'judul' && (
-                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
-                            onClick={() => handleSort('pengusul')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Unit Kerja
-                              {sortConfig.key === 'pengusul' && (
-                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
-                            onClick={() => handleSort('tahun')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Tahun
-                              {sortConfig.key === 'tahun' && (
-                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
-                            onClick={() => handleSort('status')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Status
-                              {sortConfig.key === 'status' && (
-                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors"
-                            onClick={() => handleSort('progress')}
-                          >
-                            <div className="flex items-center gap-1">
-                              Progress
-                              {sortConfig.key === 'progress' && (
-                                sortConfig.direction === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                              )}
-                            </div>
-                          </th>
+                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nama Regulasi</th>
+                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Unit Kerja</th>
+                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tahun</th>
+                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                          <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</th>
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Keterangan</th>
                           <th className="py-4 px-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Edit</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {paginatedRegulations.length > 0 ? (
-                          paginatedRegulations.map((reg, index) => (
-                            <tr key={`${reg.id}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
-                              <td className="py-5 px-6">
-                                <span className="text-xs font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + index + 1}</span>
-                              </td>
-                              <td className="py-5 px-6">
-                                <p 
-                                  onClick={() => setSelectedReg(reg)}
-                                  className="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2 max-w-md cursor-pointer hover:text-emerald-600 transition-colors"
-                                  title={reg.judul}
-                                >
-                                  {reg.judul}
-                                </p>
-                              </td>
-                              <td className="py-5 px-6">
-                                <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                                  {reg.pengusul}
-                                </span>
-                              </td>
-                              <td className="py-5 px-6">
-                                <span className="text-xs font-bold text-slate-600">{reg.tahun}</span>
-                              </td>
-                              <td className="py-5 px-6">
-                                <div className="flex items-center gap-1.5">
-                                  <div className={`w-1.5 h-1.5 rounded-full ${getStatusColorClass(reg.status)}`} />
-                                  <span className="text-xs font-medium text-slate-600 capitalize">{reg.status}</span>
+                        {paginatedRegulations.map((reg, index) => (
+                          <tr key={`${reg.id}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="py-5 px-6">
+                              <span className="text-xs font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                            </td>
+                            <td className="py-5 px-6">
+                              <p 
+                                onClick={() => setSelectedReg(reg)}
+                                className="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2 max-w-md cursor-pointer hover:text-emerald-600 transition-colors"
+                                title={reg.judul}
+                              >
+                                {reg.judul}
+                              </p>
+                            </td>
+                            <td className="py-5 px-6">
+                              <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                {reg.pengusul}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6">
+                              <span className="text-xs font-bold text-slate-600">{reg.tahun}</span>
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${getStatusColorClass(reg.status)}`} />
+                                <span className="text-xs font-medium text-slate-600 capitalize">{reg.status}</span>
+                              </div>
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
+                                  <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${reg.progress}%` }}
+                                    className={`h-full ${getStatusColorClass(reg.status)}`}
+                                  />
                                 </div>
-                              </td>
-                              <td className="py-5 px-6">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
-                                    <motion.div 
-                                      initial={{ width: 0 }}
-                                      animate={{ width: `${reg.progress}%` }}
-                                      className={`h-full ${getStatusColorClass(reg.status)}`}
-                                    />
-                                  </div>
-                                  <span className="text-xs font-bold text-slate-700">{reg.progress}%</span>
-                                </div>
-                              </td>
-                              <td className="py-5 px-6">
-                                <button 
-                                  onClick={() => setSelectedReg(reg)}
-                                  className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all inline-block"
-                                  title="Lihat Detail"
-                                >
-                                  <Eye size={16} />
-                                </button>
-                              </td>
-                              <td className="py-5 px-6">
-                                <div className="flex items-center gap-1">
-                                  <button 
-                                    onClick={() => {
-                                      setSelectedRegForUpdate(reg);
-                                      setIsUpdateModalOpen(true);
-                                    }}
-                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all inline-block"
-                                    title="Update Status"
-                                  >
-                                    <RefreshCw size={16} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr key="no-data-row">
-                            <td colSpan={8} className="py-20 text-center">
-                              <div className="flex flex-col items-center gap-3">
-                                <div className="p-4 bg-slate-50 rounded-full text-slate-300">
-                                  <Search size={32} />
-                                </div>
-                                <p className="text-sm font-bold text-slate-400">Tidak ada regulasi ditemukan</p>
+                                <span className="text-xs font-bold text-slate-700">{reg.progress}%</span>
+                              </div>
+                            </td>
+                            <td className="py-5 px-6">
+                              <button 
+                                onClick={() => setSelectedReg(reg)}
+                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all inline-block"
+                                title="Lihat Detail"
+                              >
+                                <Eye size={16} />
+                              </button>
+                            </td>
+                            <td className="py-5 px-6">
+                              <div className="flex items-center gap-1">
                                 <button 
                                   onClick={() => {
-                                    setSearchQuery('');
-                                    setSelectedYear('All');
-                                    setSelectedUnit('All');
+                                    setSelectedRegForUpdate(reg);
+                                    setIsUpdateModalOpen(true);
                                   }}
-                                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all inline-block"
+                                  title="Update Status"
                                 >
-                                  Reset Filter
+                                  <RefreshCw size={16} />
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        )}
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -952,7 +725,12 @@ export default function App() {
 
                   <div className="flex justify-end gap-3">
                     <button 
-                      onClick={() => setIsResetConfirmOpen(true)}
+                      onClick={() => {
+                        if (window.confirm('Hapus cache lokal dan muat ulang data dari Google Sheets?')) {
+                          localStorage.clear();
+                          window.location.reload();
+                        }
+                      }}
                       className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all flex items-center gap-2"
                     >
                       <X size={18} />
@@ -1011,18 +789,15 @@ export default function App() {
       </div>
 
       {/* Minimal Footer */}
-        <footer className="px-4 lg:px-8 py-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+        <footer className="px-8 py-4 bg-white border-t border-slate-200 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           <span>BSKJI Kementerian Perindustrian</span>
-          <span className="hidden sm:inline">•</span>
-          <span>© 2024 Sistem Monitoring Prioritas</span>
         </footer>
       </main>
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedReg && (
-          <div key="detail-modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
-              key="detail-modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1135,7 +910,7 @@ export default function App() {
                         {historyData
                           .filter(h => h.kode_reg.trim().toLowerCase() === selectedReg.kode_reg.trim().toLowerCase())
                           .map((item, idx) => (
-                            <div key={`history-${item.kode_reg}-${item.tanggal}-${idx}`} className="grid grid-cols-[100px_100px_1fr] gap-4 px-4 py-3 hover:bg-slate-50/50 transition-colors">
+                            <div key={`history-${item.kode_reg}-${idx}`} className="grid grid-cols-[100px_100px_1fr] gap-4 px-4 py-3 hover:bg-slate-50/50 transition-colors">
                               <span className="text-[10px] font-bold text-slate-700">{item.tanggal}</span>
                               <div>
                                 <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[8px] font-bold uppercase tracking-wider inline-block">
@@ -1171,9 +946,8 @@ export default function App() {
       {/* Update Modal */}
       <AnimatePresence>
         {isUpdateModalOpen && selectedRegForUpdate && (
-          <div key="update-modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
-              key="update-modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1227,15 +1001,15 @@ export default function App() {
                   <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Update Status</label>
                   <select 
                     name="status"
-                    value={modalStatus}
+                    value={modalStatus.toLowerCase()}
                     onChange={(e) => handleModalStatusChange(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-600"
                   >
-                    <option value="Pengusulan">Pengusulan</option>
-                    <option value="Pembahasan">Pembahasan</option>
-                    <option value="Harmonisasi">Harmonisasi</option>
-                    <option value="Pengundangan">Pengundangan</option>
-                    <option value="Selesai">Selesai</option>
+                    <option value="pengusulan">Pengusulan</option>
+                    <option value="pembahasan">Pembahasan</option>
+                    <option value="harmonisasi">Harmonisasi</option>
+                    <option value="pengundangan">Pengundangan</option>
+                    <option value="selesai">Selesai</option>
                   </select>
                 </div>
 
@@ -1305,18 +1079,16 @@ export default function App() {
             </motion.div>
           </div>
         )}
-      </AnimatePresence>
 
-      <AnimatePresence>
-        {isDeleteConfirmOpen && (
-          <div key="delete-confirm-overlay" className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              key="delete-confirm-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
-            >
+        <AnimatePresence>
+          {isDeleteConfirmOpen && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
+              >
                 <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <X size={32} />
                 </div>
@@ -1345,44 +1117,6 @@ export default function App() {
             </div>
           )}
         </AnimatePresence>
-
-      <AnimatePresence>
-        {isResetConfirmOpen && (
-          <div key="reset-confirm-overlay" className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              key="reset-confirm-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
-            >
-                <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <RefreshCw size={32} />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">Reset Cache?</h3>
-                <p className="text-sm text-slate-500 mb-6">
-                  Hapus cache lokal dan muat ulang data dari Google Sheets?
-                </p>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => setIsResetConfirmOpen(false)}
-                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-all"
-                  >
-                    Batal
-                  </button>
-                  <button 
-                    onClick={() => {
-                      localStorage.clear();
-                      window.location.reload();
-                    }}
-                    className="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-xl font-bold text-xs hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20"
-                  >
-                    Ya, Reset
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
       </AnimatePresence>
     </div>
   );
@@ -1412,25 +1146,25 @@ function SidebarLink({ icon, label, active, onClick, collapsed }: { icon: ReactN
   );
 }
 
-function StatCard({ label, value, trend, icon, color, getStatCardColors }: { label: string, value: string, trend: string, icon: ReactNode, color: string, getStatCardColors: (c: string) => string }) {
+function StatCard({ label, value, trend, icon, color }: { label: string, value: string, trend: string, icon: ReactNode, color: string }) {
   const isPositive = trend.startsWith('+');
   
   return (
     <motion.div 
       whileHover={{ y: -4 }}
-      className="bg-white p-5 lg:p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
+      className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-2xl ${getStatCardColors(color)}`}>
+        <div className={`p-3 rounded-2xl bg-${color}-50`}>
           {icon}
         </div>
-        <span className={`text-[10px] lg:text-xs font-bold px-2 py-1 rounded-lg whitespace-nowrap ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
           {trend}
         </span>
       </div>
       <div>
-        <p className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-        <h4 className="text-2xl lg:text-3xl font-display font-bold text-slate-800 tracking-tight">{value}</h4>
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <h4 className="text-3xl font-display font-bold text-slate-800 tracking-tight">{value}</h4>
       </div>
     </motion.div>
   );
