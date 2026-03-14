@@ -41,7 +41,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | 'All'>('All');
   const [selectedUnit, setSelectedUnit] = useState<string | 'All'>('All');
-  const [selectedReg, setSelectedReg] = useState<any | null>(null);
+  const [selectedReg, setSelectedReg] = useState<Regulation | null>(null);
   const [selectedRegForUpdate, setSelectedRegForUpdate] = useState<Regulation | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -49,6 +49,7 @@ export default function App() {
   const [modalProgress, setModalProgress] = useState(0);
   const [historyToDelete, setHistoryToDelete] = useState<HistoryItem | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   
   // Update modal states when selected regulation changes
   useEffect(() => {
@@ -156,6 +157,15 @@ export default function App() {
     if (s.includes('harmon')) return 'bg-indigo-500';
     if (s.includes('undang') || s.includes('selesai')) return 'bg-emerald-500';
     return 'bg-slate-400';
+  };
+
+  const getStatCardColors = (color: string) => {
+    switch (color) {
+      case 'red': return 'bg-red-50';
+      case 'emerald': return 'bg-emerald-50';
+      case 'indigo': return 'bg-indigo-50';
+      default: return 'bg-slate-50';
+    }
   };
 
   const totalPages = Math.ceil(filteredRegulations.length / itemsPerPage);
@@ -417,6 +427,7 @@ export default function App() {
                   trend={selectedYear === 'All' ? "Total" : `Tahun ${selectedYear}`}
                   icon={<FileText className="text-red-500" />} 
                   color="red"
+                  getStatCardColors={getStatCardColors}
                 />
                 <StatCard 
                   label="Regulasi Selesai" 
@@ -424,6 +435,7 @@ export default function App() {
                   trend={`${(((statusCounts.selesai + statusCounts.pengundangan) / (totalRegulasi || 1)) * 100).toFixed(0)}%`}
                   icon={<CheckCircle2 className="text-emerald-500" />} 
                   color="emerald"
+                  getStatCardColors={getStatCardColors}
                 />
                 <StatCard 
                   label="Progress Rata-rata" 
@@ -431,6 +443,7 @@ export default function App() {
                   trend="Overall" 
                   icon={<TrendingUp className="text-indigo-500" />} 
                   color="indigo"
+                  getStatCardColors={getStatCardColors}
                 />
               </div>
 
@@ -561,71 +574,94 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {paginatedRegulations.map((reg, index) => (
-                          <tr key={`${reg.id}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
-                            <td className="py-5 px-6">
-                              <span className="text-xs font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + index + 1}</span>
-                            </td>
-                            <td className="py-5 px-6">
-                              <p 
-                                onClick={() => setSelectedReg(reg)}
-                                className="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2 max-w-md cursor-pointer hover:text-emerald-600 transition-colors"
-                                title={reg.judul}
-                              >
-                                {reg.judul}
-                              </p>
-                            </td>
-                            <td className="py-5 px-6">
-                              <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                                {reg.pengusul}
-                              </span>
-                            </td>
-                            <td className="py-5 px-6">
-                              <span className="text-xs font-bold text-slate-600">{reg.tahun}</span>
-                            </td>
-                            <td className="py-5 px-6">
-                              <div className="flex items-center gap-1.5">
-                                <div className={`w-1.5 h-1.5 rounded-full ${getStatusColorClass(reg.status)}`} />
-                                <span className="text-xs font-medium text-slate-600 capitalize">{reg.status}</span>
-                              </div>
-                            </td>
-                            <td className="py-5 px-6">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
-                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${reg.progress}%` }}
-                                    className={`h-full ${getStatusColorClass(reg.status)}`}
-                                  />
+                        {paginatedRegulations.length > 0 ? (
+                          paginatedRegulations.map((reg, index) => (
+                            <tr key={`${reg.id}-${index}`} className="hover:bg-slate-50/80 transition-colors group">
+                              <td className="py-5 px-6">
+                                <span className="text-xs font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                              </td>
+                              <td className="py-5 px-6">
+                                <p 
+                                  onClick={() => setSelectedReg(reg)}
+                                  className="text-sm font-semibold text-slate-700 leading-relaxed line-clamp-2 max-w-md cursor-pointer hover:text-emerald-600 transition-colors"
+                                  title={reg.judul}
+                                >
+                                  {reg.judul}
+                                </p>
+                              </td>
+                              <td className="py-5 px-6">
+                                <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                  {reg.pengusul}
+                                </span>
+                              </td>
+                              <td className="py-5 px-6">
+                                <span className="text-xs font-bold text-slate-600">{reg.tahun}</span>
+                              </td>
+                              <td className="py-5 px-6">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`w-1.5 h-1.5 rounded-full ${getStatusColorClass(reg.status)}`} />
+                                  <span className="text-xs font-medium text-slate-600 capitalize">{reg.status}</span>
                                 </div>
-                                <span className="text-xs font-bold text-slate-700">{reg.progress}%</span>
-                              </div>
-                            </td>
-                            <td className="py-5 px-6">
-                              <button 
-                                onClick={() => setSelectedReg(reg)}
-                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all inline-block"
-                                title="Lihat Detail"
-                              >
-                                <Eye size={16} />
-                              </button>
-                            </td>
-                            <td className="py-5 px-6">
-                              <div className="flex items-center gap-1">
+                              </td>
+                              <td className="py-5 px-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden w-20">
+                                    <motion.div 
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${reg.progress}%` }}
+                                      className={`h-full ${getStatusColorClass(reg.status)}`}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-700">{reg.progress}%</span>
+                                </div>
+                              </td>
+                              <td className="py-5 px-6">
+                                <button 
+                                  onClick={() => setSelectedReg(reg)}
+                                  className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all inline-block"
+                                  title="Lihat Detail"
+                                >
+                                  <Eye size={16} />
+                                </button>
+                              </td>
+                              <td className="py-5 px-6">
+                                <div className="flex items-center gap-1">
+                                  <button 
+                                    onClick={() => {
+                                      setSelectedRegForUpdate(reg);
+                                      setIsUpdateModalOpen(true);
+                                    }}
+                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all inline-block"
+                                    title="Update Status"
+                                  >
+                                    <RefreshCw size={16} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr key="no-data-row">
+                            <td colSpan={8} className="py-20 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="p-4 bg-slate-50 rounded-full text-slate-300">
+                                  <Search size={32} />
+                                </div>
+                                <p className="text-sm font-bold text-slate-400">Tidak ada regulasi ditemukan</p>
                                 <button 
                                   onClick={() => {
-                                    setSelectedRegForUpdate(reg);
-                                    setIsUpdateModalOpen(true);
+                                    setSearchQuery('');
+                                    setSelectedYear('All');
+                                    setSelectedUnit('All');
                                   }}
-                                  className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all inline-block"
-                                  title="Update Status"
+                                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
                                 >
-                                  <RefreshCw size={16} />
+                                  Reset Filter
                                 </button>
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -721,12 +757,7 @@ export default function App() {
 
                   <div className="flex justify-end gap-3">
                     <button 
-                      onClick={() => {
-                        if (window.confirm('Hapus cache lokal dan muat ulang data dari Google Sheets?')) {
-                          localStorage.clear();
-                          window.location.reload();
-                        }
-                      }}
+                      onClick={() => setIsResetConfirmOpen(true)}
                       className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all flex items-center gap-2"
                     >
                       <X size={18} />
@@ -792,8 +823,9 @@ export default function App() {
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedReg && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div key="detail-modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
+              key="detail-modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -906,7 +938,7 @@ export default function App() {
                         {historyData
                           .filter(h => h.kode_reg.trim().toLowerCase() === selectedReg.kode_reg.trim().toLowerCase())
                           .map((item, idx) => (
-                            <div key={`history-${item.kode_reg}-${idx}`} className="grid grid-cols-[100px_100px_1fr] gap-4 px-4 py-3 hover:bg-slate-50/50 transition-colors">
+                            <div key={`history-${item.kode_reg}-${item.tanggal}-${idx}`} className="grid grid-cols-[100px_100px_1fr] gap-4 px-4 py-3 hover:bg-slate-50/50 transition-colors">
                               <span className="text-[10px] font-bold text-slate-700">{item.tanggal}</span>
                               <div>
                                 <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[8px] font-bold uppercase tracking-wider inline-block">
@@ -942,8 +974,9 @@ export default function App() {
       {/* Update Modal */}
       <AnimatePresence>
         {isUpdateModalOpen && selectedRegForUpdate && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div key="update-modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div 
+              key="update-modal-content"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1075,16 +1108,18 @@ export default function App() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
 
-        <AnimatePresence>
-          {isDeleteConfirmOpen && (
-            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
-              >
+      <AnimatePresence>
+        {isDeleteConfirmOpen && (
+          <div key="delete-confirm-overlay" className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              key="delete-confirm-content"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
+            >
                 <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <X size={32} />
                 </div>
@@ -1113,6 +1148,44 @@ export default function App() {
             </div>
           )}
         </AnimatePresence>
+
+      <AnimatePresence>
+        {isResetConfirmOpen && (
+          <div key="reset-confirm-overlay" className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div 
+              key="reset-confirm-content"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"
+            >
+                <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">Reset Cache?</h3>
+                <p className="text-sm text-slate-500 mb-6">
+                  Hapus cache lokal dan muat ulang data dari Google Sheets?
+                </p>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setIsResetConfirmOpen(false)}
+                    className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={() => {
+                      localStorage.clear();
+                      window.location.reload();
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-xl font-bold text-xs hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20"
+                  >
+                    Ya, Reset
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
       </AnimatePresence>
     </div>
   );
@@ -1142,7 +1215,7 @@ function SidebarLink({ icon, label, active, onClick, collapsed }: { icon: ReactN
   );
 }
 
-function StatCard({ label, value, trend, icon, color }: { label: string, value: string, trend: string, icon: ReactNode, color: string }) {
+function StatCard({ label, value, trend, icon, color, getStatCardColors }: { label: string, value: string, trend: string, icon: ReactNode, color: string, getStatCardColors: (c: string) => string }) {
   const isPositive = trend.startsWith('+');
   
   return (
@@ -1151,7 +1224,7 @@ function StatCard({ label, value, trend, icon, color }: { label: string, value: 
       className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-2xl bg-${color}-50`}>
+        <div className={`p-3 rounded-2xl ${getStatCardColors(color)}`}>
           {icon}
         </div>
         <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
